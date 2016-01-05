@@ -2,10 +2,13 @@
 
 
 
+% subs={'s01', 's02', 's03', 's04', 's05', 's06',};
 subs={'s01', 's02', 's03', 's04', 's05', 's06',};
-for s=1:6
+data_path = '/Users/jthompson/Dropbox/ripples/';
+%%
+for s=1:length(subs)
     sub = subs{s};
-    data_path = ['/Users/jthompson/data/ripples/', sub, filesep];
+    subjdir = [data_path, sub, filesep];
     if strcmp(sub, 's01')
 		% ABBA 8 runs
 		bases = {['ripples_', sub, '_run1_simple'], ['ripples_', sub, ...
@@ -14,16 +17,18 @@ for s=1:6
             '_run5_simple'], ['ripples_', sub, '_run6_combo'], ...
             ['ripples_', sub, '_run7_combo'], ['ripples_', sub, ...
             '_run8_simple']};
+        comboruns = [2, 3, 6, 7];
     elseif strcmp(sub, 's02') || strcmp(sub, 's03')
 		% ABBA 12 runs
 		bases = {['ripples_', sub, '_run1_simple'], ['ripples_', sub, ...
             '_run2_combo'], ['ripples_', sub, '_run3_combo'], ...
             ['ripples_', sub, '_run4_simple'], ['ripples_', sub, ...
-            '_run5_simple', ['ripples_', sub, '_run6_combo'], ...
+            '_run5_simple'], ['ripples_', sub, '_run6_combo'], ...
             ['ripples_', sub, '_run7_combo'], ['ripples_', sub, ...
             '_run8_simple'], ['ripples_', sub, '_run9_simple'], ...
-            'ripples_'+ sub, '_run10_combo'], ['ripples_'+ sub, ...
-            '_run11_combo'], ['ripples_'+ sub, '_run12_simple']};
+            ['ripples_', sub, '_run10_combo'], ['ripples_', sub, ...
+            '_run11_combo'], ['ripples_', sub, '_run12_simple']};
+        comboruns = [2, 3, 6, 7, 10, 11];
     else
         % BAAB 12 runs
 		bases = {['ripples_', sub, '_run1_combo'], ['ripples_', sub, ...
@@ -34,42 +39,56 @@ for s=1:6
             '_run8_combo'], ['ripples_', sub, '_run9_combo'], ...
             ['ripples_', sub, '_run10_simple'], ['ripples_', sub, ...
             '_run11_simple'], ['ripples_', sub, '_run12_combo']};
+        comboruns = [1, 4, 5, 8, 9, 12];
     end
 
-    % Make cell array of vtc file names
+    % Make cell array of vtc and sdm file names
     smooth = '_SD3DVSS6.00mm';
+    sdmdir = [subjdir 'sdms' filesep];
+    params = ['_minus', '_scaled', '_cHRF', '+MC'];
+    nfeatures = 4;
     if strcmp(sub, 's01')
         for r=1:8
-            VTCs{r} = [data_path, bases{r}, ...
+            if ismember(r, comboruns)
+                runtype='combo';
+            else
+                runtype='simple';
+            end
+            VTCs{r} = [subjdir, bases{r}, ...
                 '_SCSTBL_3DMCS_THPGLMF6c_b02b0_TU_TAL', smooth, '.vtc'];
+            sdm_fname{r} = sprintf('%s%s_run%d_%s_RippleIndicator%dD%s.sdm',sdmdir, sub, r, runtype, nfeatures, params);
         end
     else
         for r=1:12
-            VTCs{r} = [data_path, bases{r}, ...
+            if ismember(r, comboruns)
+                runtype='combo';
+            else
+                runtype='simple';
+            end
+            VTCs{r} = [subjdir, bases{r}, ...
                 '_SCSTBL_3DMCS_LTR_THPGLMF6c_b02b0_TU_TAL', smooth, ...
                 '.vtc'];
+            sdm_fname{r} = sprintf('%s%s_run%d_%s_RippleIndicator%dD%s.sdm',sdmdir, sub, r, runtype, nfeatures, params);
         end
     end
-
-    % Make cell array of .sdms file names
-    fname = ['_minus', '_scaled', '_cHRF', '+MC'];
-    sprintf('%s%s_run%d_%s_RippleIndicator%dD%s.sdm',sdmdir, ...
-            sub, run, runtype, nfeatures, fname);
     
-    % Save .mdm 
+    % Save .mdm per subject
+    mdm = xff('new:mdm');
+    mdm.XTC_RTC = [VTCs(:), sdm_fname(:)]; 
+    mdm.SaveAs([subjdir, 'mdms', filesep, sprintf('%s_RippleIndicator%dD%s%s.mdm', sub, nfeatures, params, smooth)]);
 end
     
 
-
-
-for s=1:6
+%%
+for s=1:length(subs)
     sub=subs{s};
+    subjdir = [data_path, sub, filesep];
     if s==1
-        bigmdm = xff([sub filesep 'mdms' filesep sprintf('%s_RI4D-MINUS+SoundOn_scaled+MC_smth2mm.mdm', sub)]);
+        bigmdm = xff([subjdir, 'mdms', filesep, sprintf('%s_RippleIndicator%dD%s%s.mdm', sub, nfeatures, params, smooth)]);
     else
-        mdm=xff([sub filesep 'mdms' filesep sprintf('%s_RI4D-MINUS+SoundOn_scaled+MC_smth2mm.mdm', sub)]);
+        mdm=xff([subjdir, 'mdms', filesep, sprintf('%s_RippleIndicator%dD%s%s.mdm', sub, nfeatures, params, smooth)]);
         bigmdm.XTC_RTC = cat(1, bigmdm.XTC_RTC, mdm.XTC_RTC);
     end
 end
 
-bigmdm.SaveAs('RI4D-MINUS+SoundOn_scaled+MC_smth2mm_allsubs.mdm')
+bigmdm.SaveAs([data_path, 'group', filesep, sprintf('allsubs_RippleIndicator%dD%s%s.mdm', nfeatures, params, smooth)])
