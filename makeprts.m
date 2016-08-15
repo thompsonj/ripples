@@ -3,7 +3,7 @@
 % s02_run1_stimuli_timing_Jun_04_1006.txt
 % D:\ripples\s01\prts\ripples_im_run1_1cond.prt
 % D:\ripples\s01\prts\ripples_im_run1_allconds.prt
-sub = 's06      '
+sub = 's01'
 if strcmp(sub, 's01')
     order = 'ABBA';
     comboruns = [2, 3, 6, 7];
@@ -24,8 +24,8 @@ else
 end
 
 % order = 'BAAB';
-logdir = ['/Users/jthompson/data/ripples/' sub '/logs/'];
-prtdir = ['/Users/jthompson/data/ripples/' sub '/prts/'];
+logdir = ['/Users/jthompson/Dropbox/ripples/' sub '/logs/'];
+prtdir = ['/Users/jthompson/Dropbox/ripples/' sub '/prts/'];
 % logdir = ['D:\ripples\' sub '\logs\'];
 % prtdir = ['D:\ripples\' sub '\prts\'];
 
@@ -104,8 +104,10 @@ for run=1:nruns
 %     end
     %     prt.SaveAs(sprintf('%s%s_run%d_allconds_ceil.prt',prtdir,sub,run));
     
-    prt = xff('/Users/jthompson/data/ripples/s01/prts/allconds_simple_per_run.prt');
+    prt = xff('/Users/jthompson/Dropbox/ripples/s01/prts/allconds_simple_per_run.prt');
     % Set on/offsets for each of the 92 unique stimuli
+    nPred = length(simpleruns)*8 + 84;
+    prt.Cond = prt.Cond(1:nPred); % empty struct 
     j=1;
     for c=1:8
         for r=1:length(simpleruns)
@@ -124,11 +126,12 @@ for run=1:nruns
         end
     end
     for c=9:92
-        prt.Cond(40+c).ConditionName = {sprintf('sound%d',c)};
-        prt.Cond(40+c).Weights = [];
+        prt.Cond(j).ConditionName = {sprintf('sound%d',c)};
+        prt.Cond(j).Weights = [];
         inds = find(stimuliinfo(:,2)==c+1);
-        prt.Cond(40+c).NrOfOnOffsets = length(inds);
-        prt.Cond(40+c).OnOffsets = [stimuliinfo(inds, 1) stimuliinfo(inds, 1)];
+        prt.Cond(j).NrOfOnOffsets = length(inds);
+        prt.Cond(j).OnOffsets = [stimuliinfo(inds, 1) stimuliinfo(inds, 1)];
+        j=j+1;
     end
     
     prt.SaveAs(sprintf('%s%s_run%d_allconds_simple_per_run.prt',prtdir,sub,run));
